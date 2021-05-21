@@ -1,4 +1,4 @@
-package info.vizierdb.ui
+package info.vizierdb.ui.rxExtras
 
 import org.scalajs.dom
 import scalajs.js
@@ -23,5 +23,4 @@ package object implicits {
   
   implicit def renderFrag[T <% Frag](f: T): dom.Node = 
     f.render
-
 }

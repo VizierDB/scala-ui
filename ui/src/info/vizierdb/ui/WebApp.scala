@@ -4,42 +4,37 @@ import org.scalajs.dom.document
 import scalatags.JsDom.all._
 import org.scalajs.dom
 import rx._
+import scala.concurrent.ExecutionContext.Implicits.global
 
-import implicits._
+import rxExtras.implicits._
+import rxExtras.RxBufferView
+import state.BranchSubscription
+import view.WorkflowView
 
 object WebApp {
   import Ctx.Owner.Unsafe._
   implicit val dataCtx = new Ctx.Data(new Rx.Dynamic[Int]( (owner, data) => 42, None ))
 
   val state = Var[Int](0)
-
-
-  def setupUI(): Unit = {
-    println("word")
-    val button = document.createElement("button")
-    button.textContent = "Click me!"
-    button.addEventListener("click", { (e: dom.MouseEvent) => 
-      println("Hello!")
-      state() = state.now + 1
-    })
-    document.body.appendChild(button)
-    document.body.appendChild(
-      ul(
-        li(Rx { println("Refresh"); state }) 
-      )
-    )
-    state.trigger { 
-      println("State: " + state)
-    }
-
-  }
-
+  val api = API("http://localhost:5000/vizier-db/api/v1")
+  var workflowView: WorkflowView = null
 
   def main(args: Array[String]): Unit = 
   {
-    println("Hi!")
     document.addEventListener("DOMContentLoaded", { (e: dom.Event) => 
-      setupUI()
+      println("Project")
+      api.project("1")
+         .onSuccess { case project =>
+            println(s"Project: $project")
+            project.defaultBranch
+                   .onSuccess { case branch =>
+                      println(s"Branch: $branch")
+                      val subscription = branch.subscribe
+                      workflowView = new WorkflowView(subscription)
+                      document.body.appendChild(workflowView.root)
+                   }
+         }
     })
   }
+
 }  
